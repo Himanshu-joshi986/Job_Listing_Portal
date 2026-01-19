@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Layout } from "./components/Layout";
+import { RequireAuth } from "./components/RequireAuth";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -39,12 +40,30 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/jobs" element={<JobListingsPage />} />
             <Route path="/jobs/:jobId" element={<JobDetailsPage />} />
-            <Route path="/dashboard/seeker" element={<SeekerDashboardPage />} />
+            <Route
+              path="/dashboard/seeker"
+              element={
+                <RequireAuth role="seeker">
+                  <SeekerDashboardPage />
+                </RequireAuth>
+              }
+            />
             <Route
               path="/dashboard/employer"
-              element={<EmployerDashboardPage />}
+              element={
+                <RequireAuth role="employer">
+                  <EmployerDashboardPage />
+                </RequireAuth>
+              }
             />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route
+              path="/profile"
+              element={
+                <RequireAuth>
+                  <ProfilePage />
+                </RequireAuth>
+              }
+            />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </AnimatePresence>
