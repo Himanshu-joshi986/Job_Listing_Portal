@@ -1,0 +1,49 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  padding: 20px;
+}
+
+.jobs-container {
+  margin-top: 40px;
+  max-width: 800px;
+  width: 100%;
+}
+
+.jobs-list {
+  list-style: none;
+  padding: 0;
+}
+
+.job-item {
+  background-color: #3a3f47;
+  margin: 15px 0;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.job-item h3 {
+  margin: 0 0 10px 0;
+  color: #61dafb;
+}
+
+.job-item p {
+  margin: 5px 0;
+  font-size: 16px;
+}
+
+.salary {
+  color: #4caf50;
+  font-weight: bold;
+}
