@@ -1,77 +1,112 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const connectDB = require('./db');
+const Job = require('./models/jobModel');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Connect to MongoDB
+connectDB();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Sample data - In production, this would come from a database
-const jobs = [
-  {
-    id: 1,
-    title: 'Frontend Developer',
-    company: 'Tech Corp',
-    location: 'New York, NY',
-    salary: '$80,000 - $100,000'
-  },
-  {
-    id: 2,
-    title: 'Backend Developer',
-    company: 'Software Solutions',
-    location: 'San Francisco, CA',
-    salary: '$90,000 - $120,000'
-  },
-  {
-    id: 3,
-    title: 'Full Stack Developer',
-    company: 'Web Innovations',
-    location: 'Remote',
-    salary: '$85,000 - $110,000'
-  },
-  {
-    id: 4,
-    title: 'DevOps Engineer',
-    company: 'Cloud Systems',
-    location: 'Austin, TX',
-    salary: '$95,000 - $125,000'
-  }
-];
-
 // Routes
 app.get('/api', (req, res) => {
   res.json({ message: 'Welcome to Job Listing Portal API' });
 });
 
-app.get('/api/jobs', (req, res) => {
-  res.json(jobs);
-});
-
-app.get('/api/jobs/:id', (req, res) => {
-  const job = jobs.find(j => j.id === parseInt(req.params.id));
-  if (!job) {
-    return res.status(404).json({ message: 'Job not found' });
+// Get all jobs
+app.get('/api/jobs', async (req, res) => {
+  try {
+    const jobs = await Job.find({ status: 'Active' }).sort({ createdAt: -1 });
+    res.json(jobs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.json(job);
 });
 
-app.post('/api/jobs', (req, res) => {
-  const newJob = {
-    id: jobs.length + 1,
-    title: req.body.title,
-    company: req.body.company,
-    location: req.body.location,
-    salary: req.body.salary
-  };
-  jobs.push(newJob);
-  res.status(201).json(newJob);
+// Get job by ID
+app.get('/api/jobs/:id', async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create new job
+app.post('/api/jobs', async (req, res) => {
+  try {
+    const { title, company, location, salary, description, jobType, requirements, postedBy } = req.body;
+
+    // Validate required fields
+    if (!title || !company || !location) {
+      return res.status(400).json({ message: 'Please provide title, company, and location' });
+    }
+
+    const newJob = new Job({
+      title,
+      company,
+      location,
+      salary,
+      description,
+      jobType: jobType || 'Full-time',
+      requirements: requirements || [],
+      postedBy,
+      status: 'Active'
+    });
+
+    const savedJob = await newJob.save();
+    res.status(201).json(savedJob);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update job
+app.put('/api/jobs/:id', async (req, res) => {
+  try {
+    const job = await Job.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete job
+app.delete('/api/jobs/:id', async (req, res) => {
+  try {
+    const job = await Job.findByIdAndDelete(req.params.id);
+
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    res.json({ message: 'Job deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
