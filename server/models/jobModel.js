@@ -19,6 +19,14 @@ const jobSchema = new mongoose.Schema(
       required: [true, 'Please provide a job location'],
       trim: true
     },
+    salaryMin: {
+      type: Number,
+      default: 0
+    },
+    salaryMax: {
+      type: Number,
+      default: 0
+    },
     salary: {
       type: String,
       trim: true
@@ -27,20 +35,33 @@ const jobSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
-    jobType: {
-      type: String,
-      enum: ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'],
-      default: 'Full-time'
-    },
+    responsibilities: [
+      {
+        type: String,
+        trim: true
+      }
+    ],
+    qualifications: [
+      {
+        type: String,
+        trim: true
+      }
+    ],
     requirements: [
       {
         type: String,
         trim: true
       }
     ],
-    postedBy: {
+    jobType: {
       type: String,
-      trim: true
+      enum: ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'],
+      default: 'Full-time'
+    },
+    postedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Please provide employer ID']
     },
     status: {
       type: String,

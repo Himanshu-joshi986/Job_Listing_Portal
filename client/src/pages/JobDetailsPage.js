@@ -1,11 +1,70 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageShell } from "../components/PageShell";
 import { JOBS } from "../data/jobs";
+import { applicationService, savedJobService } from "../services/dashboard";
 
 export function JobDetailsPage() {
   const { jobId } = useParams();
   const job = useMemo(() => JOBS.find((j) => j.id === jobId), [jobId]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
+
+  const seekerId = localStorage.getItem("userId") || "demo-seeker-id";
+  // In a real app, get employerId from job document or database
+  const employerId = localStorage.getItem("employerId") || "demo-employer-id";
+
+  const handleApply = async () => {
+    if (!coverLetter.trim()) {
+      setError("Please write a cover letter");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      await applicationService.applyForJob(
+        job.id,
+        seekerId,
+        employerId,
+        coverLetter
+      );
+      setSuccess("Application submitted successfully!");
+      setShowApplyModal(false);
+      setCoverLetter("");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.message || "Failed to apply for job");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveJob = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      if (isSaved) {
+        // Remove from saved
+        setIsSaved(false);
+      } else {
+        // Save job
+        await savedJobService.saveJob(job.id, seekerId);
+        setSuccess("Job saved successfully!");
+        setIsSaved(true);
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err) {
+      setError(err.message || "Failed to save job");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!job) {
     return (
@@ -57,13 +116,82 @@ export function JobDetailsPage() {
               <div className="text-sm font-semibold">{job.salary}</div>
             </div>
             <div className="mt-2 text-xs text-white/55">Posted {job.postedAt}</div>
-            <button className="btn-primary mt-4 w-full py-3">
-              Apply Now
+
+            {success && (
+              <div className="mt-3 rounded-2xl bg-green-500/20 border border-green-500/50 p-3 text-xs text-green-300">
+                {success}
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-3 rounded-2xl bg-red-500/20 border border-red-500/50 p-3 text-xs text-red-300">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowApplyModal(true)}
+              disabled={loading}
+              className="btn-primary mt-4 w-full py-3 disabled:opacity-50"
+            >
+              {loading ? "Applying..." : "Apply Now"}
             </button>
-            <button className="btn-ghost mt-2 w-full py-3">
-              Save Job
+            <button
+              onClick={handleSaveJob}
+              disabled={loading}
+              className={`mt-2 w-full py-3 rounded-xl font-medium transition ${
+                isSaved
+                  ? "btn-primary"
+                  : "btn-ghost"
+              } disabled:opacity-50`}
+            >
+              {isSaved ? "✓ Saved" : "Save Job"}
             </button>
           </div>
+
+          {/* Apply Modal */}
+          {showApplyModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="glass rounded-3xl p-6 max-w-md w-full">
+                <div className="text-xl font-bold">Apply for {job.title}</div>
+                <div className="mt-2 text-sm text-white/60">
+                  At {job.company}
+                </div>
+
+                <div className="mt-5">
+                  <label className="block text-sm font-semibold mb-2">
+                    Cover Letter
+                  </label>
+                  <textarea
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    placeholder="Tell the employer why you're a great fit for this role..."
+                    className="input min-h-[150px] resize-none"
+                  />
+                </div>
+
+                <div className="mt-5 flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowApplyModal(false);
+                      setCoverLetter("");
+                    }}
+                    disabled={loading}
+                    className="btn-ghost flex-1 py-3 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleApply}
+                    disabled={loading}
+                    className="btn-primary flex-1 py-3 disabled:opacity-50"
+                  >
+                    {loading ? "Submitting..." : "Submit Application"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
